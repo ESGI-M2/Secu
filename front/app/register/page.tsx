@@ -21,14 +21,14 @@ export default function Register() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email");
-    const firstName = formData.get("firstName");
-    const lastName = formData.get("lastName");
+    const firstname = formData.get("firstName");
+    const lastname = formData.get("lastName");
     const password = formData.get("password");
 
     await api.post("/auth/register", {
       email,
-      firstName,
-      lastName,
+      firstname,
+      lastname,
       password,
     });
 
@@ -39,7 +39,7 @@ export default function Register() {
     <div className="flex h-screen items-center justify-center mx-auto">
       <Card className="min-w-[400px]">
         <CardHeader>
-          <CardTitle>Vous connecter</CardTitle>
+          <CardTitle>S'inscrire</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,7 +60,7 @@ export default function Register() {
               <Input type="password" name="password" />
             </div>
             <Button type="submit" className="w-full">
-              Se connecter
+              S'inscrire
             </Button>
           </form>
         </CardContent>

@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 export class AuthService {
   constructor(private prisma: PrismaService, private mailerService: MailerService, private jwtService: JwtService) {}
 
-  async register(data: { email: string; password: string }) {
+  async register(data: { email: string; password: string; firstname: string; lastname: string }) {
     const existingUser = await this.prisma.user.findUnique({ where: { email: data.email } });
     if (existingUser) {
       throw new Error('Email already in use');
@@ -20,6 +20,8 @@ export class AuthService {
       data: {
         email: data.email,
         password: hashedPassword,
+        firstname: data.firstname,
+        lastname: data.lastname,
         isConfirmed: false,
         activationToken,
       },
@@ -31,7 +33,7 @@ export class AuthService {
       text: `Merci de vous être inscrit. Cliquez sur ce lien pour activer votre compte : http://localhost:3000/auth/confirm?token=${activationToken}`,
       html: `<p>Merci de vous être inscrit. Cliquez sur ce lien pour activer votre compte :</p><a href="http://localhost:3000/auth/confirm?token=${activationToken}">Activer mon compte</a>`
     });
-    return { id: user.id, email: user.email, message: 'Un email de confirmation a été envoyé.' };
+    return { id: user.id, email: user.email, firstname: user.firstname, lastname: user.lastname, message: 'Un email de confirmation a été envoyé.' };
   }
 
   async login(data: { email: string; password: string }) {
@@ -94,9 +96,9 @@ export class AuthService {
     });
     console.log('2FA DEBUG: code supprimé pour', data.email);
     // Ici on génère le JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email, role: user.role, firstname: user.firstname, lastname: user.lastname };
     const token = this.jwtService.sign(payload);
-    return { access_token: token };
+    return { access_token: token, user: { id: user.id, email: user.email, firstname: user.firstname, lastname: user.lastname, role: user.role } };
   }
 
   async confirm(token: string) {
