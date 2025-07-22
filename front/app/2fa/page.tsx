@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
 
-export default function TwoFAPage() {
+function TwoFAPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -22,14 +23,12 @@ export default function TwoFAPage() {
     setLoading(true);
     try {
       const result = await api.post("/auth/2fa/verify", { email, code: code.trim() });
-      // Succès si status 2xx ou si access_token présent
       if ((result.status >= 200 && result.status < 300) && result.data.access_token) {
         window.localStorage.setItem("token", result.data.access_token);
         document.cookie = `jwt=${result.data.access_token}; path=/; max-age=3600; SameSite=Strict`;
         router.push("/users");
         return;
       }
-      // Si jamais le backend renvoie access_token même avec un autre status
       if (result.data.access_token) {
         window.localStorage.setItem("token", result.data.access_token);
         document.cookie = `jwt=${result.data.access_token}; path=/; max-age=3600; SameSite=Strict`;
@@ -70,5 +69,13 @@ export default function TwoFAPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function TwoFAPage() {
+  return (
+    <Suspense>
+      <TwoFAPageInner />
+    </Suspense>
   );
 } 

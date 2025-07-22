@@ -41,7 +41,7 @@ export default function ConfirmPage() {
     });
   }, []);
 
-  const onSubmit = (data) => {
+  const onSubmit = (data: zod.infer<typeof schema>) => {
     api
       .put("users/password", {
         ...data,
