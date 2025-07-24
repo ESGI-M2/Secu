@@ -1,0 +1,66 @@
+# Vulnérabilités LFI et JWT sur le projet NestJS
+
+## 1. LFI (Local File Inclusion)
+
+### Endroit vulnérable :
+Route GET `/lfi?file=...` dans `AppController` :
+```ts
+@Get('lfi')
+lfi(@Query('file') file: string) {
+  // Vulnérable : pas de validation du chemin
+  const filePath = path.join(process.cwd(), file);
+  return fs.readFileSync(filePath, 'utf8');
+}
+```
+
+### Exploitation :
+- Permet de lire n'importe quel fichier du serveur, ex :
+  - `/lfi?file=package.json`
+  - `/lfi?file=../../../../etc/passwd`
+
+### Remédiation :
+- Valider et restreindre le chemin du fichier (whitelist, pas de `..`, pas de `/` au début, etc.)
+- Exemple de correction :
+```ts
+@Get('lfi')
+lfi(@Query('file') file: string) {
+  // Remédiation : on autorise seulement certains fichiers
+  const allowedFiles = ['package.json', 'README.md'];
+  if (!allowedFiles.includes(file)) {
+    throw new BadRequestException('Fichier non autorisé');
+  }
+  const filePath = path.join(process.cwd(), file);
+  return fs.readFileSync(filePath, 'utf8');
+}
+```
+
+---
+
+## 2. JWT (authentification)
+
+### Endroit vulnérable :
+Dans `JwtAuthGuard` :
+```ts
+// VULNÉRABILITÉ : on accepte n'importe quel token sans vérification !
+(request as any).user = { id: 1, email: 'admin@vuln.local', role: 'ADMIN' };
+return true;
+```
+
+### Exploitation :
+- Il suffit de mettre n'importe quel token dans l'en-tête Authorization pour être authentifié comme admin !
+- Ex :
+  - `Authorization: Bearer nimportequoi`
+
+### Remédiation :
+- Toujours vérifier et décoder le JWT avec la clé secrète :
+```ts
+const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET || 'changeme' });
+(request as any).user = payload;
+```
+- Ne jamais bypasser la vérification !
+
+---
+
+**Conclusion :**
+- LFI : toujours valider les chemins de fichiers côté serveur.
+- JWT : toujours vérifier la signature du token. 

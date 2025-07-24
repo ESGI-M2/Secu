@@ -10,17 +10,16 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('Authorization header absent ou invalide:', authHeader);
       throw new UnauthorizedException('Missing or invalid Authorization header');
     }
     const token = authHeader.split(' ')[1];
+    // VULNÉRABILITÉ : on accepte n'importe quel token sans vérification !
     try {
-      const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET || 'changeme' });
-      (request as any).user = payload;
+      // const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET || 'changeme' });
+      // (request as any).user = payload;
+      (request as any).user = { id: 1, email: 'admin@vuln.local', role: 'ADMIN' };
       return true;
     } catch (e) {
-      console.log('JWT reçu:', token);
-      console.log('Erreur JWT:', e);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
